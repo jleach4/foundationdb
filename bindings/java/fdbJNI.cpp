@@ -640,6 +640,48 @@ JNIEXPORT jlong JNICALL Java_com_apple_foundationdb_FDBTransaction_Transaction_1
 	return (jlong)f;
 }
 
+JNIEXPORT void JNICALL Java_com_apple_foundationdb_FDBTransaction_Transaction_1getDirectRange
+(JNIEnv *jenv, jobject, jlong tPtr, jobject jbuffer, jboolean orEqualBegin, jint offsetBegin,
+		jint lengthBegin, jboolean orEqualEnd, jint offsetEnd, jint lengthEnd, jint rowLimit, jint targetBytes, 
+		jint streamingMode, jint iteration, jboolean snapshot, jboolean reverse) {
+
+	if( !tPtr || !jbuffer) {
+		throwParamNotNull(jenv);
+		return ;
+	}
+	FDBTransaction *tr = (FDBTransaction *)tPtr;
+
+	uint8_t *buffer = (uint8_t *) jenv->GetDirectBufferAddress(jbuffer);
+	if (!buffer) {
+		if( !jenv->ExceptionOccurred() )
+			throwRuntimeEx( jenv, "Error getting handle to native resources" );
+		return;
+	}
+
+	FDBFuture *f = fdb_transaction_get_range( tr, buffer, lengthBegin, orEqualBegin, offsetBegin,
+			buffer, lengthEnd, orEqualEnd, offsetEnd, rowLimit,
+			targetBytes, (FDBStreamingMode)streamingMode, iteration, snapshot, reverse);
+
+
+	const FDBKeyValue *kvs;
+	int count;
+	fdb_bool_t more;
+	fdb_error_t err = fdb_future_get_keyvalue_array( f, &kvs, &count, &more );
+	if( err ) {
+		safeThrow( jenv, getThrowable( jenv, err ) );
+		return;
+	}
+//	memcpy(&countPosition, &count, sizeOfInt);
+//	memcpy(&countPosition + sizeOfInt, &kvs[count-1].key_length, sizeOfInt); // LAST KEY LENGTH
+//	memcpy(&countPosition + 2 * sizeOfInt, &kvs[count-1].key, kvs[count-1].key_length); // LAST KEY VALUE
+//	int offset = (int) (&countPosition + 2 * sizeOfInt + kvs[count-1].key_length);
+//	for(int i = 0; i < count; i++) {
+//		memcpy(&offset +i*sizeOfInt, &kvs[i].key_length, sizeOfInt);
+//		memcpy(&offset + (i*2 + 1)*sizeOfInt, &kvs[i].value_length, sizeOfInt);
+//	}
+	fdb_future_destroy(f);
+}
+
 JNIEXPORT jlong JNICALL Java_com_apple_foundationdb_FDBTransaction_Transaction_1getEstimatedRangeSizeBytes(JNIEnv *jenv, jobject, jlong tPtr, 
 		jbyteArray beginKeyBytes, jbyteArray endKeyBytes) {
 	if( !tPtr || !beginKeyBytes || !endKeyBytes) {

@@ -25,6 +25,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.nio.ByteBuffer;
 
 import com.apple.foundationdb.async.AsyncIterable;
 import com.apple.foundationdb.async.AsyncUtil;
@@ -667,6 +668,7 @@ class FDBTransaction extends NativeObjectWrapper implements Transaction, OptionC
 			byte[] keyEnd, boolean orEqualEnd, int offsetEnd,
 			int rowLimit, int targetBytes, int streamingMode, int iteration,
 			boolean isSnapshot, boolean reverse);
+	private native void Transaction_getDirectRange(long cPtr, ByteBuffer buffer);		
 	private native void Transaction_addConflictRange(long cPtr,
 			byte[] keyBegin, byte[] keyEnd, int conflictRangeType);
 	private native void Transaction_set(long cPtr, byte[] key, byte[] value);
