@@ -1,0 +1,33 @@
+version: 0.2
+
+env:
+  variables:
+    NPROC: 60
+    BUILD_DIR: build_output
+
+phases:
+  install:
+    commands:
+      - echo "install phase"
+  pre_build:
+    commands:
+      - echo "pre_build phase"
+      - source /opt/rh/devtoolset-8/enable
+      - source /opt/rh/rh-python36/enable
+      - source /opt/rh/rh-ruby26/enable
+  build:
+    commands:
+      - echo "build phase"
+      - find -type f ${CODEBUILD_SRC_DIR} | wc -l
+      - mkdir -p /root/src
+      - cd /root/src/
+      - rsync -aq ${CODEBUILD_SRC_DIR}/. .
+      - cmake -S . -B ${BUILD_DIR} -D USE_CCACHE=1 -G Ninja && ninja -C ${BUILD_DIR} -j ${NPROC}
+      - rsync -aq . ${CODEBUILD_SRC_DIR}/
+      - find -type f ${CODEBUILD_SRC_DIR} | wc -l
+  post_build:
+    commands:
+      - echo "post_build phase"
+artifacts:
+  files:
+    - '**/*'
