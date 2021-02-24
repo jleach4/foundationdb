@@ -1,0 +1,29 @@
+version: 0.2
+
+env:
+  variables:
+    BUILD_DIR: build_output
+
+phases:
+  install:
+    commands:
+      - echo "install phase"
+  pre_build:
+    commands:
+      - echo "pre_build phase"
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - source /opt/rh/devtoolset-8/enable
+      - source /opt/rh/rh-python36/enable
+      - source /opt/rh/rh-ruby26/enable
+      - aws eks --region us-west-2 update-kubeconfig --name foundationdb-dev
+      - kubectl get configmaps joshua-coordinator-config -o json | jq -r '.data."cluster-file"' > cluster-file
+  build:
+    commands:
+      - echo "build phase"
+      - python3 -m joshua.joshua --cluster-file ./cluster-file start --tarball $(find ${BUILD_DIR}/packages -name correctness\*.tar.gz) --username codebuild-${COMMIT_HASH} --max-runs 1000
+  post_build:
+    commands:
+      - echo "post_build phase"
+artifacts:
+  files:
+    - '**/*'
