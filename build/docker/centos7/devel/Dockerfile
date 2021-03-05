@@ -3,15 +3,17 @@ ARG VERSION=centos7-latest
 FROM ${REPOSITORY}:${VERSION}
 
 # add vscode server
-RUN yum repolist && \
+RUN yum-config-manager --add-repo=https://copr.fedorainfracloud.org/coprs/carlwgeorge/ripgrep/repo/epel-7/carlwgeorge-ripgrep-epel-7.repo && \
+    yum repolist && \
     yum -y install \
+        bash-completion \
+        cgdb \
+        emacs-nox \
+        jq \
+        ripgrep \
         tmux \
         tree \
-        emacs-nox \
-        vim \
-        bash-completion \
-        jq \
-        cgdb && \
+        vim && \
     yum clean all && \
     rm -rf /var/cache/yum
 

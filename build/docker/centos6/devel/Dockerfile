@@ -5,13 +5,13 @@ FROM ${REPOSITORY}:${VERSION}
 # add vscode server
 RUN yum repolist && \
     yum -y install \
+        bash-completion \
+        cgdb \
+        emacs-nox \
+        jq \
         tmux \
         tree \
-        emacs-nox \
-        vim \
-        bash-completion \
-        jq \
-        cgdb && \
+        vim && \
     yum clean all && \
     rm -rf /var/cache/yum
 
