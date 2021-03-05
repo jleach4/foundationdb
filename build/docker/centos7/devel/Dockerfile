@@ -63,4 +63,7 @@ RUN echo -en "\n"\
     "}\n"\
     "function j() {\n"\
     "   python3 -m joshua.joshua --cluster-file /etc/foundationdb/cluster-file \"\${@}\"\n"\
+    "}\n"\
+    "function jsd() {\n"\
+    "   j start --tarball \$(find ${HOME}/build_output/packages -name correctness\*.tar.gz) \"\${@}\"\n"\
     "}\n" >> .bashrc
