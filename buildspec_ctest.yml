@@ -23,13 +23,20 @@ phases:
 #      - cd /root/src/
 #      - rsync -aq ${CODEBUILD_SRC_DIR}/. .
 #      - cd ${BUILD_DIR}
-#      - ctest --debug -j ${NPROC} --output-on-failure
+#      - AARON PLEASE ADD THIS TO APPROPRIATE PLACE https://gitlab.inria.fr/simgrid/simgrid/blob/13bf12b18f191192a6ba4f0ef5452b88986aa88f/tools/jenkins/ctest2junit.xsl
+#      - ctest --debug -j ${NPROC} --no-compress-output -T test --output-on-failure
+#      - xsltproc ctest2junit.xsl build_output/Testing/**/Test.xml > ./junit.xml
 #      - cd /root/src/
 #      - rsync -aq . ${CODEBUILD_SRC_DIR}/
 #      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
   post_build:
     commands:
       - echo "post_build phase"
+reports:
+  CiReports:
+    files:
+      - "junit.xml"
+    discard-paths: yes      
 artifacts:
   files:
     - '**/*'
