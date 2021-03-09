@@ -18,7 +18,8 @@ phases:
   build:
     commands:
       - echo "build phase"
-      - echo "MAKE PACKAGES HERE"
+      - cd ${BUILD_DIR}
+      - cpack -G RPM
   post_build:
     commands:
       - echo "post_build phase"
