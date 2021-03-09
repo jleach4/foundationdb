@@ -21,14 +21,20 @@ WORKDIR /tmp
 RUN source /opt/rh/devtoolset-8/enable && \
     source /opt/rh/rh-python36/enable && \
     pip3 install \
+        lxml \
+        psutil \
         python-dateutil \
-        subprocess32 \
-        psutil && \
+        subprocess32 && \
     mkdir fdb-joshua && \
     cd fdb-joshua && \
     git clone --branch code_pipeline https://github.com/FoundationDB/fdb-joshua . && \
     pip3 install /tmp/fdb-joshua && \
     cd /tmp && \
+    curl -Ls https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.9/2020-11-02/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl && \
+    chmod 755 /usr/local/bin/kubectl && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip -qq awscliv2.zip && \
+    ./aws/install && \
     rm -rf /tmp/*
 
 ARG OLD_FDB_BINARY_DIR=/app/deploy/global_data/oldBinaries/
@@ -51,7 +57,7 @@ RUN curl -Ls https://update.code.visualstudio.com/latest/server-linux-x64/stable
     mkdir -p .vscode-server/bin/latest && \
     tar --strip-components 1 --no-same-owner --directory .vscode-server/bin/latest -xf /tmp/vscode-server-linux-x64.tar.gz && \
     touch .vscode-server/bin/latest/0 && \
-    rm /tmp/*
+    rm -rf /tmp/*
 RUN echo -en "\n"\
     "source /opt/rh/devtoolset-8/enable\n"\
     "source /opt/rh/rh-python36/enable\n"\
