@@ -18,15 +18,15 @@ phases:
   build:
     commands:
       - echo "build phase"
-      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
-      - mkdir -p /root/src
-      - cd /root/src/
-      - rsync -aq ${CODEBUILD_SRC_DIR}/. .
-      - cd ${BUILD_DIR}
-      - ctest --debug -j ${NPROC} --output-on-failure
-      - cd /root/src/
-      - rsync -aq . ${CODEBUILD_SRC_DIR}/
-      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
+#      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
+#      - mkdir -p /root/src
+#      - cd /root/src/
+#      - rsync -aq ${CODEBUILD_SRC_DIR}/. .
+#      - cd ${BUILD_DIR}
+#      - ctest --debug -j ${NPROC} --output-on-failure
+#      - cd /root/src/
+#      - rsync -aq . ${CODEBUILD_SRC_DIR}/
+#      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
   post_build:
     commands:
       - echo "post_build phase"
