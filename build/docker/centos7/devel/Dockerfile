@@ -11,9 +11,11 @@ RUN yum-config-manager --add-repo=https://copr.fedorainfracloud.org/coprs/carlwg
         emacs-nox \
         jq \
         ripgrep \
+        the_silver_searcher \
         tmux \
         tree \
-        vim && \
+        vim \
+        zsh && \
     yum clean all && \
     rm -rf /var/cache/yum
 
