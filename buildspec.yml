@@ -4,6 +4,10 @@ env:
   variables:
     NPROC: 60
     BUILD_DIR: build_output
+#    DISTCC_HOSTS: --randomize distcc.default.svc.cluster.local/84
+#    DISTCC_FALLBACK: 0
+#    CCACHE_PREFIX: distcc
+    CCACHE_DIR: /var/cache/ccache
 
 phases:
   install:
@@ -18,13 +22,13 @@ phases:
   build:
     commands:
       - echo "build phase"
-      - find -type f ${CODEBUILD_SRC_DIR} | wc -l
+      - find ${CODEBUILD_SRC_DIR} -type f | wc -l
       - mkdir -p /root/src
       - cd /root/src/
       - rsync -aq ${CODEBUILD_SRC_DIR}/. .
       - cmake -S . -B ${BUILD_DIR} -D USE_CCACHE=1 -G Ninja && ninja -C ${BUILD_DIR} -j ${NPROC}
       - rsync -aq . ${CODEBUILD_SRC_DIR}/
-      - find -type f ${CODEBUILD_SRC_DIR} | wc -l
+      - find ${CODEBUILD_SRC_DIR} -type f| wc -l
   post_build:
     commands:
       - echo "post_build phase"
