@@ -1,0 +1,80 @@
+#!/bin/bash
+
+readonly NAMESPACE=${1}
+readonly YCSB_WORKLOAD=${2}
+readonly YCSB_DISTRIBUTION=${3}
+readonly YCSB_RECORDCOUNT=${4}
+readonly YCSB_OPERATIONCOUNT=${5}
+readonly YCSB_THREADS=${6}
+readonly LOG_DIR=${7}
+
+function create_ycsb_pod()
+{
+ kubectl create namespace ${NAMESPACE}
+ cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    name: ycsb
+  name: ycsb-pod
+  namespace: ${NAMESPACE}
+spec:
+  containers:
+    - image: foundationdb/build:centos7-latest 
+      imagePullPolicy: IfNotPresent
+      name: ycsb-pod
+      resources:
+          limits:
+            memory: 512Mi
+      securityContext:
+        capabilities: {}
+        privileged: false
+      terminationMessagePath: /dev/termination-log
+  dnsPolicy: Default
+  restartPolicy: OnFailure
+  nodeSelector:
+  serviceAccount: ""
+status: {}
+EOF
+}
+
+function load_database()
+{
+ local pod_name
+ pod_name=$(kubectl get pods -n ${NAMESPACE} | grep foundationdb | awk '{print $1}')
+ kubectl -n ${NAMESPACE} exec $(oc get pod -n ${NAMESPACE} | grep ycsb | awk '{print $1}') -- \
+ ./bin/ycsb load foundationdb -s -threads ${YCSB_THREADS} \
+ -P "workloads/${YCSB_WORKLOAD}" \
+ -p recordcount=${YCSB_RECORDCOUNT} \
+ -p operationcount=${YCSB_OPERATIONCOUNT} \
+ -p requestdistribution=${YCSB_DISTRIBUTION} \
+ -p wtimeout=10000 \
+ -p core_workload_insertion_retry_limit=5 \
+ -p core_workload_insertion_retry_interval=5 \
+ -p maxexecutiontime=28800 2>&1 | tee -a ${LOG_DIR}/foundationdb_${pod_name}_load_${NAMESPACE}_${YCSB_WORKLOAD}_threads_${YCSB_THREADS}_opscnt_${YCSB_OPERATIONCOUNT}.log
+}
+
+function wait_until_pods_are_ready()
+{
+  local interval="$1"
+  while true;
+  do
+    ready_pods=$(kubectl get pod -n ${NAMESPACE} | grep -v deploy | grep Running | grep 1/1 | wc -l)
+    if [[ "${ready_pods}" == "1" ]]; then
+      echo "pods are ready"
+      break
+    fi
+    echo "Pods are not ready yet... waiting"
+    sleep ${interval}
+  done
+}
+
+if [ $# -eq 0 ]; then
+ echo "Come on, gimme a few variables..."
+ exit 1
+fi
+
+create_ycsb_pod ${NAMESPACE}
+wait_until_pods_are_ready 2
+load_database ${NAMESPACE}

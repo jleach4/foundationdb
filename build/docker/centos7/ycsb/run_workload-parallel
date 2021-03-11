@@ -1,0 +1,62 @@
+#!/bin/bash
+
+readonly NAMESPACE_BASENAME=foundationdb
+readonly NUMBER_OF_PROJECTS=30
+readonly YCSB_WORKLOAD=workloadb
+readonly YCSB_DISTRIBUTION=uniform
+readonly YCSB_RECORDCOUNT=4000000
+readonly YCSB_OPERATIONCOUNT=1000000
+readonly YCSB_THREADS=2
+readonly RUN_NAME=${1}
+readonly RUN_DIR=$(dirname $0)
+
+log_dir="${RUN_DIR}/${RUN_NAME}"
+
+function print_results()
+{
+  let total_throughput=0
+  let total_runtime=0
+  pod_to_node_mapfile=/tmp/podmap.$$
+  oc get pods --all-namespaces -o wide|grep mongodb|grep -v ycsb|awk '{print $2" "$8}' > ${pod_to_node_mapfile}
+  total_pods=$(cat ${pod_to_node_mapfile}|wc -l)
+  pushd ${log_dir}
+  while read line
+  do
+    pod_name=$(echo ${line} | awk -F, '{print $1}' |  awk -F_ '{print $2}')
+    runtime=$(echo $(echo ${line} | awk -F"@" '{print $1}' | awk '{print $3}')/60000|bc)
+    throughput=$(echo ${line}| awk -F"@" '{print $2}' | awk '{print $3}')
+    node=$(grep ${pod_name} $pod_to_node_mapfile|awk '{print $2}')
+    total_runtime=$(echo "$total_runtime + $runtime"|bc)
+    total_throughput=$(echo "$total_throughput + $throughput"|bc)
+    echo Host: $node, Pod: $pod_name, Runtime: ${runtime}, Throughput: $(echo "scale=2;${throughput}/1"|bc)
+  done < <(grep 'RunTime\|Throughput' mongodb*.log | paste -d "@" - -)
+  echo "average runtime(sec) for ${total_pods} pods: $(echo "scale=2; $total_runtime/$total_pods"|bc -l)"
+  echo "average Throughput(ops/sec) for ${total_pods} pods: $(echo "scale=2; $total_throughput/$total_pods"|bc -l)"
+}
+
+if [[ ! -d "${log_dir}" ]]; then
+  mkdir "$log_dir"
+fi
+
+for ((i=1; i<=${NUMBER_OF_PROJECTS}; i++))
+do
+  NAMESPACE=${NAMESPACE_BASENAME}-$i
+  echo "Starting load on namespace ${NAMESPACE}"
+  ${RUN_DIR}/run_workload ${NAMESPACE} ${YCSB_WORKLOAD} ${YCSB_DISTRIBUTION} ${YCSB_RECORDCOUNT} ${YCSB_OPERATIONCOUNT} ${YCSB_THREADS} ${log_dir} &
+done
+
+sleep 10
+
+while true
+do
+  finished_runs=$(grep "\[OVERALL\]" ${log_dir}/*.log|grep RunTime|wc -l)
+  if [ $finished_runs == $NUMBER_OF_PROJECTS ]; then
+    echo "all $finished_runs jobs are done..."
+    break
+  else
+    echo "so far $finished_runs jobs have finished..."
+    sleep 10
+  fi
+done
+
+print_results > ${log_dir}/results.txt

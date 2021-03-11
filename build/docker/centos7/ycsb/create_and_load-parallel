@@ -1,0 +1,25 @@
+#!/bin/bash
+
+readonly BASE_NAMESPACE=foundationdb
+readonly NUMBER_OF_PROJECTS=1
+readonly YCSB_WORKLOAD=workloadb
+readonly YCSB_DISTRIBUTION=uniform
+readonly YCSB_RECORDCOUNT=4000000
+readonly YCSB_OPERATIONCOUNT=4000000
+readonly YCSB_THREADS=8
+readonly RUN_NAME=${1}
+start_from=${2}
+readonly RUN_DIR=$(dirname $0)
+log_dir="${RUN_DIR}/${RUN_NAME}"
+
+if [[ ! -d "${log_dir}" ]]; then
+  mkdir "$log_dir"
+fi
+
+for ((i=1; i<=${NUMBER_OF_PROJECTS}; i++))
+do
+  NAMESPACE=${BASE_NAMESPACE}-${start_from}
+  echo "running in namespace ${NAMESPACE}"
+  ${RUN_DIR}/create_and_load ${NAMESPACE} ${YCSB_WORKLOAD} ${YCSB_DISTRIBUTION} ${YCSB_RECORDCOUNT} ${YCSB_OPERATIONCOUNT} ${YCSB_THREADS} ${log_dir} &
+  (( ++start_from ))
+done

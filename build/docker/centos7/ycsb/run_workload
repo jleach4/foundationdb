@@ -1,0 +1,24 @@
+#!/bin/bash
+
+readonly NAMESPACE=${1}
+readonly YCSB_WORKLOAD=${2}
+readonly YCSB_DISTRIBUTION=${3}
+readonly YCSB_RECORDCOUNT=${4}
+readonly YCSB_OPERATIONCOUNT=${5}
+readonly YCSB_THREADS=${6}
+readonly LOG_DIR=${7}
+
+function run_workload()
+{
+  kubectl -n ${NAMESPACE} exec $(kubectl get pod -n ${NAMESPACE} | grep ycsb | awk '{print $1}') -- \
+  ./bin/ycsb run foundationdb -s -threads ${YCSB_THREADS} \
+  -P "workloads/${YCSB_WORKLOAD}" \
+  -p recordcount=${YCSB_RECORDCOUNT} \
+  -p operationcount=${YCSB_OPERATIONCOUNT} \
+  -p requestdistribution=${YCSB_DISTRIBUTION} \
+  -p wtimeout=10000 \
+  -p writeallfields=true \
+  -p maxexecutiontime=18000 | tee -a ${LOG_DIR}/foundationdb_run_${NAMESPACE}_${YCSB_WORKLOAD}_threads_${YCSB_THREADS}.log
+}
+
+run_workload
